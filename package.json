@@ -1,0 +1,18 @@
+{
+  "name": "factorio-relay-interface",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "dotenv": "^16.0.1",
+    "fs": "^0.0.1-security",
+    "read-last-lines": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.4"
+  }
+}
