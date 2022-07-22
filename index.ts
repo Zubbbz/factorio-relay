@@ -1,64 +1,63 @@
 import 'dotenv/config';
-import * as chok from 'chokidar';
 import * as fs from 'fs';
-import readLastLines, * as rll from 'read-last-lines';
 
-const logFileLocation = process.env.LogFilePath
 const log = console.log.bind(console);
-const nameRegex = /<[^>]+>/g;
+const error = console.error.bind(console);
 
-if (!logFileLocation) {
-	throw new Error('.env file is missing the log file path');
+function initialize() {
+	// logfile
+	if (validateLogFile() == false ) {
+		throw new Error('Log file failed to validate!');
+	} else {
+		log('Logfile: ✅');
+	}
+
+	log('Ready to listen for logfile changes ✅');
 }
-if (!validateLogFile) {
-	throw new Error('Log file is invalid (check the path in the .env file and that your factorio server is running)')
-}
 
-const logWatch = chok.watch(logFileLocation, { persistent: true });
+// TODO: do the same thing without having to read the entire logfile
+function validateLogFile(): boolean {
+	let path = process.env.LogFilePath;
 
-// logWatch.on('change', () => {
-// 	log(`Logfile change detected`)
-// 	rll.read(logFileLocation, 1, "utf-8")
-// 		.then((line) => get)
-// })
+	if (!path) { return false; }
 
-function validateLogFile(path: string): boolean {
 	if (fs.existsSync(path)) {
 		try {
-			const contents = fs.readFileSync(path);
+			let contents = fs.readFileSync(path);
 			if (contents.toString().startsWith("=== Log opened")) {
 				return true;
 			}
-		} catch (err) {
-			console.error(err);
+		} catch(err) {
+			error(err);
 		}
 	}
+
 	return false;
 }
 
-// get a string that contains the sender's name as well as their message (spaces at start and end are trimmed)
 function getChatContent(line: string): string | void {
-	if (line.substring(20).startsWith("[CHAT]")) { // get rid of date and time prefix that all log entries have
-		return line.substring(20 + 6).trim()
-	}
-
-	return
-}
-
-// isolate the player's name from getChatContent
-function getPlayerName(content: string) {
-	content = getChatContent(content)!;
-	let name = content.match(nameRegex)?.at(0); // at this point, name is still wrapped in <>
-	return name?.substring(1, name.length - 1);
-}
-
-// isolate the message
-function getChatMessage(content: string): string | void {
-	content = getChatContent(content)!;
-	let name = content.match(nameRegex)?.at(0); // at this point, name is still wrapped in <>
-	if (name) {
-		return content.substring(name.length + 2); // strip the name and the ': ' from the content and return whats left ( the message )
+	if (line.substring(20).startsWith("[CHAT]")) {
+		return line.substring(20 + 6).trim() // 20 is for datetime, the +6 is for "[CHAT]"
 	} else {
-		return;
+		return
 	}
 }
+
+function getPlayerName(line: string): string { // we're going to assume the line passed in here is a valid chat line (bug fix later probs :D)
+	let nameRegex = /<[^>]+>/g;
+	let name = line.match(nameRegex)?.at(0);
+	if (typeof name != 'string') {
+		throw new Error('getPlayerName() was unable to find a name (string) using match.') // if you see this error, it might be an issue with getChatContent()
+	}
+
+	return name.substring(1, name.length - 1);
+}
+
+function getChatMessage(line: string): string {
+	let name = getPlayerName(line);
+
+	return line.substring(name.length + 2);
+}
+
+initialize();
+
