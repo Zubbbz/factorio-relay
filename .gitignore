@@ -1,5 +1,6 @@
-/node_modules
+node_modules/
+/log.txt
 /package-lock.json
-/.env
 /server.bat
 /SrcdsEmulator.ts
+/.env
