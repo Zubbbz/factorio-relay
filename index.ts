@@ -1,12 +1,14 @@
 import 'dotenv/config';
 import * as fs from 'fs';
+import * as chokidar from 'chokidar';
+import * as rll from 'read-last-lines';
 
 const log = console.log.bind(console);
 const error = console.error.bind(console);
 
 function initialize() {
 	// logfile
-	if (validateLogFile() == false ) {
+	if (validateLogFile() == false) {
 		throw new Error('Log file failed to validate!');
 	} else {
 		log('Logfile: ✅');
@@ -27,7 +29,7 @@ function validateLogFile(): boolean {
 			if (contents.toString().startsWith("=== Log opened")) {
 				return true;
 			}
-		} catch(err) {
+		} catch (err) {
 			error(err);
 		}
 	}
@@ -61,3 +63,15 @@ function getChatMessage(line: string): string {
 
 initialize();
 
+const listener = chokidar.watch(process.env.LogFilePath!, { persistent: true });
+
+listener.on('change', async () => {
+	log('Logfile change detected');
+
+	let content = getChatContent(await rll.read(process.env.LogFilePath!, 1, 'utf-8'));
+	if (typeof content != 'string') { return }
+	let name = getPlayerName(content);
+	let message = getChatMessage(content);
+
+	log('Name: ' + name + '\nMessage: ' + message);
+});
